@@ -43,4 +43,14 @@
         <servlet-name>Events</servlet-name>
         <url-pattern>/events</url-pattern>
     </servlet-mapping>
+
+    <servlet>
+        <servlet-name>FetchAppointmentsServlet</servlet-name>
+        <servlet-class>com.pet.pet.FetchAppointmentsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>FetchAppointmentsServlet</servlet-name>
+        <url-pattern>/fetchAppointments</url-pattern>
+    </servlet-mapping>
+
 </web-app>
