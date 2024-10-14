@@ -12,14 +12,13 @@ public class CalendarUtil {
         int firstDayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
         int daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
 
-        // Fill the calendar
         int day = 1;
         for (int i = 0; i < 6; i++) { // 6 rows
             for (int j = 0; j < 7; j++) { // 7 columns
                 if (i == 0 && j < firstDayOfWeek - 1) {
-                    calendar[i][j] = ""; // Empty days before the first of the month
+                    calendar[i][j] = "";
                 } else if (day > daysInMonth) {
-                    calendar[i][j] = ""; // Empty days after the last day of the month
+                    calendar[i][j] = "";
                 } else {
                     calendar[i][j] = String.valueOf(day);
                     day++;

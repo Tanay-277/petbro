@@ -59,12 +59,72 @@
             background-color: rgba(0, 255, 136, 0.3);
         }
 
-        .day.active {
-            background-color: #00ff88; /* Change this to your desired highlight color */
-            color: #000; /* Adjust text color if needed */
-            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5); /* Optional: Add a glow effect */
+        .day {
+            border-radius: 8px; /* Soft rounded corners */
+            border: none;
+            background-color: #ffffff12;
+            color: #eee; /* Soft text color */
+            transition: background-color 0.3s ease; /* Smooth transition */
         }
 
+        .day:hover {
+            background-color: #ffffff18; /* Slightly lighter on hover */
+        }
+
+        /* New styles for appointment card */
+        .appointment-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 8px; /* Soft corners */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Toggle button */
+        .toggle-button {
+            padding: 0.5rem 1rem;
+            background: #fff;
+            border: none;
+            border-radius: 5px;
+            color: #000;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-button:hover {
+            background: #ffffffba;
+        }
+
+        /* Responsive layout */
+        .calendar-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            width: 100%;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .calendar-container.minimize {
+            gap:0.6em !important;
+            flex-direction: row !important;
+        }
+
+        .calendar {
+            flex: 1; /* Default to full width */
+            max-width: 100%; /* Ensures it doesn't exceed the width */
+            margin-right: 1rem; /* Space between calendar and appointment card */
+        }
+
+        .appointments {
+            flex: 1; /* Default to full width */
+            max-width: 100%;
+        }
+
+        /* Minimize mode */
+        .minimize .calendar,
+        .minimize .appointments {
+            max-width: 50%; /* 50% width in minimize mode */
+        }
     </style>
 </head>
 <body>
@@ -87,88 +147,111 @@
     <div class="flex justify-between items-center mb-4">
         <h2 class="text-3xl my-4 text-center font-bold">All Appointments</h2>
         <button class="bg-green-500 hover:bg-green-400 text-black font-bold py-2 px-4 rounded-lg"
-                onclick="location.href='/addAppointment'">Add Appointment
+                onclick="location.href='/pet/appointments'">Add Appointment
         </button>
     </div>
 
-    <div class="text-center">
-        <h3 class="text-xl mb-4">October 2024</h3>
-        <div class="grid grid-cols-7 gap-2">
-            <%
-                String[] daysOfWeek = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-                for (String day : daysOfWeek) {
-            %>
-            <div class="font-bold text-lg"><%= day %>
-            </div>
-            <% } %>
-
-            <%
-                List<Event> eventsList = (List<Event>) request.getAttribute("eventsList");
-                Map<Integer, List<Event>> appointmentMap = new HashMap<>();
-                for (Event event : eventsList) {
-                    Calendar cal = Calendar.getInstance();
-                    cal.setTime(event.getDate());
-                    int day = cal.get(Calendar.DAY_OF_MONTH);
-                    appointmentMap.computeIfAbsent(day, k -> new ArrayList<>()).add(event);
-                }
-
-                String[][] calendar = CalendarUtil.getCalendar(2024, Calendar.OCTOBER);
-                for (int i = 0; i < calendar.length; i++) {
-                    for (int j = 0; j < calendar[i].length; j++) {
-                        String day = calendar[i][j];
-            %>
-            <div class="day border border-gray-700 p-2 cursor-pointer transition hover:bg-gray-600"
-                 onclick="showAppointments(<%= day.isEmpty() ? -1 : Integer.parseInt(day) %>)">
-                <%= day.isEmpty() ? "&nbsp;" : day %>
-                <ul class="appointment-list mt-2">
-                    <%
-                        if (!day.isEmpty()) {
-                            int dayNum = Integer.parseInt(day);
-                            List<Event> dayAppointments = appointmentMap.get(dayNum);
-                            if (dayAppointments != null) {
-                                for (Event event : dayAppointments) {
-                    %>
-                    <li class="text-sm"><%= event.getPet() %> - <%= event.getVenue() %>
-                    </li>
-                    <%
-                                }
-                            }
-                        }
-                    %>
-                </ul>
-            </div>
-            <%
-                    }
-                }
-            %>
-        </div>
+    <div class="text-center mb-4 flex justify-between items-center">
+        <h3 class="text-xl mb-4 font-semibold">October 2024</h3>
+        <button class="toggle-button" onclick="toggleCalendarMode()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                 stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M8.25 15 12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"/>
+            </svg>
+        </button>
     </div>
 
-    <!-- Appointments Card -->
-    <div class="appointment-card bg-gray-800 p-4 rounded-lg shadow-md mt-6" id="appointmentsCard">
-        <div class="appointment-title text-xl font-semibold mb-2">Appointments</div>
-        <ul class="appointment-list" id="appointmentsList">
-            <%
-                for (Event event : eventsList) {
-                    Calendar cal = Calendar.getInstance();
-                    cal.setTime(event.getDate());
-                    int day = cal.get(Calendar.DAY_OF_MONTH);
-                    String dateFormatted = day + " October 2024";
-            %>
-            <li class="appointment text-sm">
-                <strong><%= event.getPet() %>
-                </strong> - <%= event.getVenue() %> <br>
-                <span class="text-gray-400"><%= dateFormatted %></span>
-            </li>
-            <%
-                }
-            %>
-        </ul>
+    <div class="calendar-container" id="calendarContainer">
+        <div class="calendar" id="calendar">
+            <div class="grid grid-cols-7 gap-2">
+                <%
+                    String[] daysOfWeek = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+                    for (String day : daysOfWeek) {
+                %>
+                <div class="font-bold text-lg"><%= day %>
+                </div>
+                <% } %>
+
+                <%
+                    List<Event> eventsList = (List<Event>) request.getAttribute("eventsList");
+                    Map<Integer, List<Event>> appointmentMap = new HashMap<>();
+                    for (Event event : eventsList) {
+                        Calendar cal = Calendar.getInstance();
+                        cal.setTime(event.getDate());
+                        int day = cal.get(Calendar.DAY_OF_MONTH);
+                        appointmentMap.computeIfAbsent(day, k -> new ArrayList<>()).add(event);
+                    }
+
+                    String[][] calendar = CalendarUtil.getCalendar(2024, Calendar.OCTOBER);
+                    for (int i = 0; i < calendar.length - 1; i++) {
+                        for (int j = 0; j < calendar[i].length; j++) {
+                            String day = calendar[i][j];
+                %>
+                <div class="day border border-gray-700 p-2 cursor-pointer transition hover:bg-gray-600"
+                     onclick="showAppointments(<%= day.isEmpty() ? -1 : Integer.parseInt(day) %>)">
+                    <%= day.isEmpty() ? "&nbsp;" : day %>
+                    <ul class="appointment-list mt-2">
+                        <%
+                            if (!day.isEmpty()) {
+                                int dayNum = Integer.parseInt(day);
+                                List<Event> dayAppointments = appointmentMap.get(dayNum);
+                                if (dayAppointments != null) {
+                                    for (Event event : dayAppointments) {
+                        %>
+                        <li class="text-sm"><%= event.getPet() %> - <%= event.getVenue() %>
+                        </li>
+                        <%
+                                    }
+                                }
+                            }
+                        %>
+                    </ul>
+                </div>
+                <%
+                        }
+                    }
+                %>
+            </div>
+        </div>
+
+        <!-- Appointments Card -->
+        <div class="appointments appointment-card" id="appointmentsCard">
+            <div class="appointment-title text-xl font-semibold mb-2">Appointments</div>
+            <ul class="appointment-list" id="appointmentsList">
+                <%
+                    for (Event event : eventsList) {
+                        Calendar cal = Calendar.getInstance();
+                        cal.setTime(event.getDate());
+                        int day = cal.get(Calendar.DAY_OF_MONTH);
+                        String dateFormatted = day + " October 2024";
+                %>
+                <li class="appointment text-sm">
+                    <strong><%= event.getPet() %>
+                    </strong> - <%= event.getVenue() %> <br>
+                    <span class="text-gray-400"><%= dateFormatted %></span>
+                </li>
+                <%
+                    }
+                %>
+            </ul>
+        </div>
     </div>
 </main>
 
 <script>
+    let isMaximized = true;
+
+    function toggleCalendarMode() {
+        const calendarContainer = document.getElementById('calendarContainer');
+        calendarContainer.classList.toggle('minimize');
+        isMaximized = !isMaximized;
+    }
+
     function showAppointments(day) {
+        if (day === -1) {
+            return;
+        }
         const appointmentsList = document.getElementById('appointmentsList');
         const events = <%= new Gson().toJson(eventsList) %>;
 
@@ -191,7 +274,7 @@
                 appointmentsList.appendChild(li);
             });
         } else {
-            appointmentsList.innerHTML = '<li class="appointment text-sm">No appointments found for this date.</li>';
+            appointmentsList.innerHTML = "<li>No appointments for this day.</li>";
         }
     }
 </script>
